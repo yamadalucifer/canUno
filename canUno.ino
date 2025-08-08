@@ -31,5 +31,8 @@ void loop() {
       Serial.print(" ");
     }
     Serial.println();
+    if(rxId == 0x123){
+      CAN.sendMsgBuf(0x456,0,len,rxBuf);
+    }
   }
 }

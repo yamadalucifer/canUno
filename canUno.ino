@@ -1,7 +1,10 @@
 #include <mcp2515_can.h>
 #include <SPI.h>
+#include "CanRingBuffer.h"
 
 mcp2515_can CAN(9);
+CanRingBuffer rxRingBuf(8);
+CanRingBuffer txRingBuf(8);
 
 void setup() {
   // put your setup code here, to run once:
@@ -16,7 +19,7 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  //rx 
   if (CAN.checkReceive() == CAN_MSGAVAIL) {
     long unsigned int rxId;
     unsigned char len;
@@ -31,8 +34,28 @@ void loop() {
       Serial.print(" ");
     }
     Serial.println();
-    if(rxId == 0x123){
-      CAN.sendMsgBuf(0x456,0,len,rxBuf);
+    if(rxRingBuf.push(rxId,len,rxBuf)==false){
+      Serial.println("BufferFull");
+    };
+  }
+  //proc
+  if(rxRingBuf.isEmpty()==false){
+    unsigned long id;
+    byte dlc;
+    byte data[8];
+    if(rxRingBuf.pop(id,dlc,data)){
+      if(id==0x123){
+        txRingBuf.push(0x456,dlc,data);
+      }
+    }
+  }
+  //tx
+  if(txRingBuf.isEmpty()==false){
+    unsigned long id;
+    byte dlc;
+    byte data[8];
+    if(txRingBuf.pop(id,dlc,data)){
+      CAN.sendMsgBuf(id,0,dlc,data);
     }
   }
 }

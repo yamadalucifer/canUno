@@ -8,7 +8,9 @@ ECHO_ID = 0x456      # UNO→PC (エコー)
 FRAME_COUNT = 10000
 DLC = 8
 #PACED_MS = None      # None=バースト, 1=1ms など
-PACED_MS = 1      # None=バースト, 1=1ms など
+#PACED_MS = 1      # None=バースト, 1=1ms など
+#PACED_MS = 0.6      # None=バースト, 1=1ms など
+PACED_MS = 0.57      # None=バースト, 1=1ms など
 RECV_TIMEOUT_S = 3.0
 
 def make_payload(seq: int, dlc: int):

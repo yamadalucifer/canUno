@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 
+#ifndef CAN_RINGBUF_CAPACITY
+#define CAN_RINGBUF_CAPACITY (3)   // デフォルト容量（メッセージ数）
+#endif
+
 class CanRingBuffer {
 private:
     struct CanMessage {
@@ -11,15 +15,14 @@ private:
         byte data[8];           // データ
     };
 
-    CanMessage* buffer;         // 動的確保したバッファ
-    size_t capacity;            // バッファの最大長
+    CanMessage buffer[CAN_RINGBUF_CAPACITY]; // 固定長バッファ（静的確保）
     size_t head;                // 書き込み位置
     size_t tail;                // 読み出し位置
     size_t count;               // 現在の格納数
 
 public:
     // コンストラクタ
-    CanRingBuffer(size_t bufSize);
+    CanRingBuffer();
 
     // デストラクタ
     ~CanRingBuffer();

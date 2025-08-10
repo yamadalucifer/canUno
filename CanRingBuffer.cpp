@@ -1,15 +1,13 @@
 #include "CanRingBuffer.h"
 
 // コンストラクタ
-CanRingBuffer::CanRingBuffer(size_t bufSize)
-    : capacity(bufSize), head(0), tail(0), count(0)
+CanRingBuffer::CanRingBuffer()
+    : head(0), tail(0), count(0)
 {
-    buffer = new CanMessage[capacity];
 }
 
 // デストラクタ
 CanRingBuffer::~CanRingBuffer() {
-    delete[] buffer;
 }
 
 // push
@@ -22,7 +20,7 @@ bool CanRingBuffer::push(unsigned long id, byte dlc, const byte* data) {
         buffer[head].data[i] = data[i];
     }
 
-    head = (head + 1) % capacity;
+    head = (head + 1) % CAN_RINGBUF_CAPACITY;
     count++;
     return true;
 }
@@ -37,7 +35,7 @@ bool CanRingBuffer::pop(unsigned long &id, byte &dlc, byte* data) {
         data[i] = buffer[tail].data[i];
     }
 
-    tail = (tail + 1) % capacity;
+    tail = (tail + 1) % CAN_RINGBUF_CAPACITY;
     count--;
     return true;
 }
@@ -49,7 +47,7 @@ size_t CanRingBuffer::size() const {
 
 // maxSize
 size_t CanRingBuffer::maxSize() const {
-    return capacity;
+    return CAN_RINGBUF_CAPACITY;
 }
 
 // isEmpty
@@ -59,7 +57,7 @@ bool CanRingBuffer::isEmpty() const {
 
 // isFull
 bool CanRingBuffer::isFull() const {
-    return count == capacity;
+    return count == CAN_RINGBUF_CAPACITY;
 }
 
 

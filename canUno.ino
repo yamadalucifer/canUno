@@ -3,8 +3,8 @@
 #include "CanRingBuffer.h"
 
 mcp2515_can CAN(9);
-CanRingBuffer rxRingBuf(8);
-CanRingBuffer txRingBuf(8);
+CanRingBuffer rxRingBuf;
+CanRingBuffer txRingBuf;
 
 void setup() {
   // put your setup code here, to run once:

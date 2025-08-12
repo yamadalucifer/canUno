@@ -5,7 +5,23 @@
 mcp2515_can CAN(9);
 CanRingBuffer rxRingBuf;
 CanRingBuffer txRingBuf;
-
+volatile bool canInt = false;
+void canISR(){
+  canInt = true;
+}
+void canHwToSw(){
+  while ((CAN.checkReceive() == CAN_MSGAVAIL)) {
+    long unsigned int rxId;
+    unsigned char len;
+    unsigned char rxBuf[7];
+    CAN.readMsgBuf(&len, rxBuf);
+    rxId = CAN.getCanId();
+    
+    if(rxRingBuf.push(rxId,len,rxBuf)==false){
+      Serial.println("BufferFull");
+    };
+  }
+}
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -16,6 +32,7 @@ void setup() {
     while (1)
       ;
   }
+  attachInterrupt(digitalPinToInterrupt(2), canISR, FALLING);
 }
 
 // 前回の処理時刻（マイクロ秒）
@@ -23,24 +40,9 @@ unsigned long prevProcMicros = 0;
 
 void loop() {
   //rx 
-  while (CAN.checkReceive() == CAN_MSGAVAIL) {
-    //Serial.println("rx");
-    long unsigned int rxId;
-    unsigned char len;
-    unsigned char rxBuf[8];
-    CAN.readMsgBuf(&len, rxBuf);
-    rxId = CAN.getCanId();
-    //Serial.print("ID: ");
-    //Serial.print(rxId, HEX);
-    //Serial.print(" Data: ");
-    //for (byte i = 0; i < len; i++) {
-    //  Serial.print(rxBuf[i], HEX);
-    //  Serial.print(" ");
-    //}
-    //Serial.println();
-    if(rxRingBuf.push(rxId,len,rxBuf)==false){
-      Serial.println("BufferFull");
-    };
+  if(canInt){
+    canInt = false;
+    canHwToSw();
   }
 
   //proc を1msごとに実行
@@ -62,6 +64,11 @@ void loop() {
       }
     }
   }
+  //rx
+  if(canInt){
+    canInt = false;
+    canHwToSw();
+  }
   //tx
   uint8_t sent = 0;
   const uint8_t TX_MAX = 8;
@@ -73,6 +80,7 @@ void loop() {
       if(CAN_OK == CAN.sendMsgBuf(id,0,dlc,data)){
         
       }else{
+        Serial.println("send fail");
         break;
       }
     }

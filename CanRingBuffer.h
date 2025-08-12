@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 #ifndef CAN_RINGBUF_CAPACITY
-#define CAN_RINGBUF_CAPACITY (3)   // デフォルト容量（メッセージ数）
+#define CAN_RINGBUF_CAPACITY (8)   // デフォルト容量（メッセージ数）
 #endif
 
 class CanRingBuffer {

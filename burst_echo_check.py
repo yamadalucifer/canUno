@@ -8,11 +8,7 @@ ECHO_ID = 0x456      # UNO→PC (エコー)
 FRAME_COUNT = 10000
 DLC = 8
 #PACED_MS = None      # None=バースト, 1=1ms など
-#PACED_MS = 1      # None=バースト, 1=1ms など
-#PACED_MS = 0.6      # None=バースト, 1=1ms など
-#PACED_MS = 0.57      # None=バースト, 1=1ms など
-#PACED_MS = 0.5      # None=バースト, 1=1ms など
-PACED_MS = 0.46      # None=バースト, 1=1ms など
+PACED_MS = 2      # None=バースト, 1=1ms など
 RECV_TIMEOUT_S = 3.0
 
 def make_payload(seq: int, dlc: int):
@@ -33,6 +29,8 @@ def main():
     reader = can.BufferedReader()
     notifier = can.Notifier(bus, [reader])
 
+    PACE_S = (PACED_MS/1000.0) if PACED_MS is not None else None
+    t_next = time.perf_counter()
     # --- 送信 ---
     t0 = time.time()
     for seq in range(FRAME_COUNT):
@@ -43,8 +41,17 @@ def main():
         except can.CanError as e:
             print(f"[SEND ERR] seq={seq}: {e}")
             # ここで直帰せず続行でもOK
-        if PACED_MS is not None:
-            time.sleep(PACED_MS/1000.0)
+        #if PACED_MS is not None:
+        #    time.sleep(PACED_MS/1000.0)
+        if PACE_S is not None:
+            t_next += PACE_S
+            while True:
+                now = time.perf_counter()
+                dt = t_next - now
+                if dt <= 0:
+                    break;
+                if dt > 0.0002:
+                    time.sleep(dt-0.0001)
     t1 = time.time()
 
     # --- 受信（送信ループバックと応答を別々に集計） ---

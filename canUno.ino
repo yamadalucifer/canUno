@@ -18,7 +18,7 @@ void canHwToSw(){
     rxId = CAN.getCanId();
     
     if(rxRingBuf.push(rxId,len,rxBuf)==false){
-      Serial.println("BufferFull");
+      //Serial.println("BufferFull");
     };
   }
 }
@@ -32,6 +32,18 @@ void setup() {
     while (1)
       ;
   }
+  //CAN.init_Mask(0,0,0x7FF);
+
+  //CAN.init_Filt(0,0,0x123);//for test
+  //CAN.init_Filt(1,0,0x7E0);//for uds
+
+  //CAN.init_Mask(1,0,0x7FF);
+
+  //CAN.init_Filt(2,0,0x7E0);//for uds
+  //CAN.init_Filt(3,0,0x123);//for test
+  //CAN.init_Filt(4,0,0x7FF);
+  //CAN.init_Filt(5,0,0x7FF);
+
   attachInterrupt(digitalPinToInterrupt(2), canISR, FALLING);
 }
 
@@ -80,7 +92,12 @@ void loop() {
       if(CAN_OK == CAN.sendMsgBuf(id,0,dlc,data)){
         
       }else{
-        Serial.println("send fail");
+        //while(true){
+        //  if(CAN_OK == CAN.sendMsgBuf(id,0,dlc,data)){
+        //    break;
+        //  }
+        //}
+        //Serial.println("tx fail");
         break;
       }
     }

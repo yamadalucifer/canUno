@@ -1,8 +1,24 @@
 #include <mcp2515_can.h>
 #include <SPI.h>
 #include "CanRingBuffer.h"
+#include "IsoTpLite.h"
 
 mcp2515_can CAN(9);
+// 下位送信関数
+bool canSendShim(uint32_t id, const uint8_t* d, uint8_t len){
+  return CAN.sendMsgBuf(id, 0, len, const_cast<uint8_t*>(d)) == CAN_OK;
+}
+
+// UDS物理: 0x7E0 を受け、FCは 0x7E0 に返す想定（相手機による）
+IsoTpLite::Cfg isocfg = {
+  .rxId = 0x7E0,
+  .fcTxId = 0x7A0,   // 通常は相手が送ってくるIDに返す。必要に応じて 0x7E8 等に変更
+  .stmin_ms = 5,     // 安全運転ライン
+  .blockSize = 8,
+  .reasmLimit = 64
+};
+IsoTpLite isotp(isocfg, canSendShim);
+
 CanRingBuffer rxRingBuf;
 CanRingBuffer txRingBuf;
 volatile bool canInt = false;
@@ -13,9 +29,11 @@ void canHwToSw(){
   while ((CAN.checkReceive() == CAN_MSGAVAIL)) {
     long unsigned int rxId;
     unsigned char len;
-    unsigned char rxBuf[7];
+    unsigned char rxBuf[8];
     CAN.readMsgBuf(&len, rxBuf);
     rxId = CAN.getCanId();
+    //Serial.print("len ");
+    //Serial.println(len);
     
     if(rxRingBuf.push(rxId,len,rxBuf)==false){
       //Serial.println("BufferFull");
@@ -72,9 +90,35 @@ void loop() {
         if(id==0x123){
           //Serial.println("valid id");
           txRingBuf.push(0x456,dlc,data);
+        }else if(id==0x7E0){
+          //Serial.print("id ");
+          //Serial.println(id,HEX);
+          //Serial.print("dlc ");
+          //Serial.println(dlc);
+          isotp.onCanRx(id, data, dlc);
+        }else{
+
         }
       }
     }
+    isotp.tick1ms();
+  }
+  //rx
+  if(canInt){
+    canInt = false;
+    canHwToSw();
+  }
+    // 3) 完了チェック
+  if (isotp.status() == IsoTpLite::DONE) {
+    uint8_t rx[64];
+    uint16_t n = isotp.read(rx, sizeof(rx));
+    // ここでUDS AP層処理（例：サービスID確認など）
+    // …必要なら応答送信は今後の送信実装で対応
+    for(int i = 0; i < n; i++){
+      Serial.print(rx[i],HEX);
+      Serial.print(" ");
+    }
+    Serial.println("");
   }
   //rx
   if(canInt){
